@@ -16,6 +16,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.service import Service
 import subprocess
 import json
+import matplotlib.pyplot as plt
 
 chrome_options = Options()
 
@@ -40,6 +41,9 @@ parser.add_argument(
     "--lighthouse", help="Run lighthouse on the target URL. Default: Disabled. You need to install the CLI with npm first", action=argparse.BooleanOptionalAction)
 parser.add_argument(
     "--write", help="Write the lighthouse results to a file. Default: Disabled", action=argparse.BooleanOptionalAction)
+parser.add_argument("--beautify", help="Create graphs based on lighthous results Default: Disabled",
+                    action=argparse.BooleanOptionalAction)
+
 
 args = parser.parse_args()
 console = Console()
@@ -150,10 +154,34 @@ def lighthouse_mode(preset=None):
             print(
                 f"LCP: {LCP:.2f} FCP: {FCP:.2f} TTFB: {TTFB:.2f} TBT: {TBT:.2f}")
         tmp_list.append({'TTFB': TTFB, 'FCP': FCP, 'LCP': LCP, 'TBT': TBT})
+
+        if args.beautify:
+            beautify()
+
     df = pd.DataFrame.from_records(tmp_list)
     print(df.describe())
     # need the 95 and 99 percentile for the data frame
     print(df.quantile([0.95, 0.99]))
+
+# Beautifier function.
+def beautify():
+    dictionary = json.load(open('lighthous.json', 'r'))
+    xAxis = [key for key, value in dictionary.items()]
+    yAxis = [value for key, value in dictionary.items()]
+    plt.grid(True)
+
+    ## LINE GRAPH ##
+    plt.plot(xAxis,yAxis, color='maroon', marker='o')
+    plt.xlabel('variable')
+    plt.ylabel('value')
+
+    ## BAR GRAPH ##
+    fig = plt.figure()
+    plt.bar(xAxis,yAxis, color='maroon')
+    plt.xlabel('variable')
+    plt.ylabel('value')
+
+    plt.show()
 
 
 def main():
@@ -197,3 +225,4 @@ if __name__ == "__main__":
     if args.lighthouse:
         lighthouse_mode(preset="desktop")
         lighthouse_mode(preset="mobile")
+    
