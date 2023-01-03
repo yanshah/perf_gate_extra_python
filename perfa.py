@@ -93,8 +93,8 @@ def browser_mode():
 
         driver.get(url)
         try:
-            sb = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.ID, "searchBar")))
+            body = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body")))
         except TimeoutException:
             print("Timeout reached without detecting the element. Skipping this run...")
             driver.quit()
@@ -103,8 +103,6 @@ def browser_mode():
         raw_data = driver.execute_script(
             "return window.performance.getEntries()")[0]
 
-        print(raw_data)
-
         dns = raw_data["domainLookupEnd"] - raw_data["domainLookupStart"]
         tcp = raw_data["connectEnd"] - raw_data["connectStart"]
         ssl = raw_data["secureConnectionStart"] - raw_data["connectStart"]
@@ -112,6 +110,7 @@ def browser_mode():
         ttfb = raw_data["responseStart"] - raw_data["fetchStart"]
 
         if args.verbose:
+            print(raw_data)
             print(
                 f"DNS: {dns:.2f}ms, TCP: {tcp:.2f}ms, SSL: {ssl:.2f}ms, TTFB: {ttfb:.2f}ms, DOM: {dom:.2f}ms")
 
@@ -123,6 +122,8 @@ def lighthouse_mode(preset=None):
     # npm install -g lighthouse
     # Default preset is mobile
     print(f">> Running the lighthouse audit in {preset} mode")
+    if preset=='mobile':
+        print(">> Mobile mode emulates a slow device: Moto G4 on a 4G connection")
     url = args.url
     n = args.count
     tmp_list = list()
@@ -144,7 +145,6 @@ def lighthouse_mode(preset=None):
             output = json.load(json_file)
         # Key metrics
 
-        TTFB = output['audits']['server-response-time']['numericValue']
         FCP = output['audits']['first-contentful-paint']['numericValue']
         LCP = output['audits']['largest-contentful-paint']['numericValue']
         TBT = output['audits']['total-blocking-time']['numericValue']
@@ -152,12 +152,17 @@ def lighthouse_mode(preset=None):
         # print these metrics
         if args.verbose:
             print(
+<<<<<<< HEAD
                 f"LCP: {LCP:.2f} FCP: {FCP:.2f} TTFB: {TTFB:.2f} TBT: {TBT:.2f}")
         tmp_list.append({'TTFB': TTFB, 'FCP': FCP, 'LCP': LCP, 'TBT': TBT})
 
         if args.beautify:
             beautify()
 
+=======
+                f"LCP: {LCP:.2f} FCP: {FCP:.2f} TBT: {TBT:.2f}")
+        tmp_list.append({'FCP': FCP, 'LCP': LCP, 'TBT': TBT})
+>>>>>>> refs/remotes/origin/main
     df = pd.DataFrame.from_records(tmp_list)
     print(df.describe())
     # need the 95 and 99 percentile for the data frame
